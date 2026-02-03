@@ -44,6 +44,8 @@ impl SignalService {
                 micropayment_price: 50000, // Fixed 0.05 USDC for now
                 created_at: Utc::now(),
                 is_locked: true,
+                community_up: 0,
+                community_down: 0,
             });
         }
 

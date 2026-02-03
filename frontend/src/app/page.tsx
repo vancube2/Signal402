@@ -12,6 +12,8 @@ const PLATFORMS = {
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { ChatRoom } from "@/components/ChatRoom";
+import { MessageSquare, X } from "lucide-react";
 
 export default function SignalDashboard() {
   const { connection } = useConnection();
@@ -19,6 +21,7 @@ export default function SignalDashboard() {
   const [signals, setSignals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [revealingId, setRevealingId] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   React.useEffect(() => {
     async function fetchSignals() {
@@ -183,6 +186,22 @@ export default function SignalDashboard() {
                     </div>
                   </div>
 
+                  {/* Opinion Tally */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <button className="flex items-center gap-2 bg-white/5 hover:bg-emerald-500/20 border border-white/5 hover:border-emerald-500/30 px-3 py-1.5 rounded-xl transition-all group/vote">
+                      <span className="text-emerald-500 group-hover/vote:scale-110 transition-transform">▲</span>
+                      <span className="text-xs font-bold text-white/40 group-hover/vote:text-emerald-400">{signal.community_up || 0}</span>
+                    </button>
+                    <button className="flex items-center gap-2 bg-white/5 hover:bg-rose-500/20 border border-white/5 hover:border-rose-500/30 px-3 py-1.5 rounded-xl transition-all group/vote">
+                      <span className="text-rose-500 group-hover/vote:scale-110 transition-transform">▼</span>
+                      <span className="text-xs font-bold text-white/40 group-hover/vote:text-rose-400">{signal.community_down || 0}</span>
+                    </button>
+                    <div className="flex-1 text-right">
+                      <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest">Consensus: </span>
+                      <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Bullish</span>
+                    </div>
+                  </div>
+
                   {/* Action Area */}
                   <div className="pt-6 border-t border-white/5 flex items-center justify-between">
                     <div>
@@ -210,6 +229,23 @@ export default function SignalDashboard() {
           )}
         </div>
       </section>
+
+      {/* Chat Room */}
+      <ChatRoom isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+
+      {/* Floating Chat Toggle */}
+      <button
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        className="fixed right-6 bottom-6 w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-2xl shadow-blue-600/40 flex items-center justify-center transition-all active:scale-95 z-40 group"
+      >
+        {isChatOpen ? <X size={24} /> : <MessageSquare size={24} />}
+        <span className="absolute right-0 top-0 w-3 h-3 bg-emerald-500 border-2 border-[#0B0F1A] rounded-full" />
+
+        {/* Tooltip */}
+        <div className="absolute right-16 px-3 py-1 bg-white/10 backdrop-blur-md rounded-lg text-[10px] font-bold uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+          Community Chat
+        </div>
+      </button>
 
       {/* Footer */}
       <footer className="py-12 border-t border-white/5 text-center text-white/20 text-xs font-medium uppercase tracking-[0.2em]">

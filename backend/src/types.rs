@@ -19,6 +19,8 @@ pub struct Signal {
     pub micropayment_price: u64,
     pub created_at: DateTime<Utc>,
     pub is_locked: bool,
+    pub community_up: u32,
+    pub community_down: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
