@@ -1,0 +1,30 @@
+# Common
+.env
+.env.local
+.env.*.local
+.DS_Store
+node_modules/
+dist/
+build/
+
+# Rust / Backend
+/backend/target/
+/backend/Cargo.lock
+**/*.rs.bk
+build_errors.txt
+run_logs.txt
+run_panic.txt
+build_check_report.txt
+
+# Next.js / Frontend
+/frontend/.next/
+/frontend/out/
+/frontend/next-env.d.ts
+/frontend/.vercel
+*.tsbuildinfo
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
