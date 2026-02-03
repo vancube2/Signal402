@@ -9,7 +9,13 @@ const PLATFORMS = {
   Solflare: "☀️ Solflare",
 };
 
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
+
 export default function SignalDashboard() {
+  const { connection } = useConnection();
+  const { publicKey, sendTransaction } = useWallet();
   const [signals, setSignals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [revealingId, setRevealingId] = useState<string | null>(null);
@@ -29,13 +35,53 @@ export default function SignalDashboard() {
     fetchSignals();
   }, []);
 
-  const handleReveal = (id: string) => {
-    setRevealingId(id);
-    // This will trigger the x402 flow in the future
-    setTimeout(() => {
-      alert("X402 Request: Payment Required (402). Open your Solana wallet to confirm the $0.05 micropayment.");
+  const handleReveal = async (signalId: string, priceLamports: number) => {
+    if (!publicKey) {
+      alert("Please connect your Solana wallet first!");
+      return;
+    }
+
+    setRevealingId(signalId);
+    try {
+      // 1. Create a transaction
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: new PublicKey(process.env.NEXT_PUBLIC_VAULT_ADDRESS || ""),
+          lamports: priceLamports,
+        })
+      );
+
+      // 2. Send transaction
+      const signature = await sendTransaction(transaction, connection);
+
+      // 3. Confirm transaction
+      await connection.confirmTransaction(signature, 'confirmed');
+
+      // 4. Fetch the unlocked alpha from backend with the signature as proof
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/reveal/${signalId}`, {
+        method: 'POST',
+        headers: {
+          'X-402-Payment-Proof': signature,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.alpha_reasoning) {
+        // Update the signal in the UI with the decrypted alpha
+        setSignals(prev => prev.map(s =>
+          s.id === signalId ? { ...s, alpha_analysis: data.alpha_reasoning, is_locked: false } : s
+        ));
+      } else {
+        alert("Payment verified, but failed to retrieve alpha: " + (data.message || "Unknown error"));
+      }
+    } catch (err: any) {
+      console.error("Payment failed", err);
+      alert("Transaction failed: " + err.message);
+    } finally {
       setRevealingId(null);
-    }, 1500);
+    }
   };
 
   return (
@@ -57,14 +103,12 @@ export default function SignalDashboard() {
               SIGNAL402
             </span>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-white/50">
-            <a href="#" className="hover:text-white transition-colors">Signals</a>
-            <a href="#" className="hover:text-white transition-colors">History</a>
-            <a href="#" className="hover:text-white transition-colors">Nodes</a>
+          <nav className="flex items-center gap-8">
+            <a href="#" className="text-white/40 hover:text-white transition-colors">Signals</a>
+            <a href="#" className="text-white/40 hover:text-white transition-colors">Markets</a>
+            <a href="#" className="text-white/40 hover:text-white transition-colors">Documentation</a>
+            <WalletMultiButton />
           </nav>
-          <button className="bg-white/5 hover:bg-white/10 border border-white/10 px-5 py-2.5 rounded-full text-sm font-semibold transition-all">
-            Connect Wallet
-          </button>
         </div>
       </header>
 
@@ -146,7 +190,7 @@ export default function SignalDashboard() {
                       <div className="font-bold text-lg">${(signal.micropayment_price / 1000000).toFixed(2)} <span className="text-white/20 text-sm">USDC</span></div>
                     </div>
                     <button
-                      onClick={() => handleReveal(signal.id)}
+                      onClick={() => handleReveal(signal.id, signal.micropayment_price)}
                       disabled={revealingId === signal.id}
                       className="relative overflow-hidden bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-2xl transition-all shadow-xl shadow-blue-600/20 active:scale-95 disabled:opacity-50"
                     >

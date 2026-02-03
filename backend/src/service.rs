@@ -1,18 +1,25 @@
 use crate::agent::GeminiAgent;
 use crate::market::MarketFetcher;
+use crate::x402::X402Verifier;
 use crate::types::{Signal, MarketPlatform};
 use chrono::Utc;
+use std::env;
 
 pub struct SignalService {
-    agent: GeminiAgent,
-    fetcher: MarketFetcher,
+    pub agent: GeminiAgent,
+    pub fetcher: MarketFetcher,
+    pub verifier: X402Verifier,
 }
 
 impl SignalService {
     pub fn new() -> Self {
+        let rpc_url = env::var("SOLANA_RPC_URL").unwrap_or_else(|_| "https://api.devnet.solana.com".to_string());
+        let vault_addr = env::var("NEXT_PUBLIC_VAULT_ADDRESS").unwrap_or_else(|_| "6M2N...".to_string()); // Placeholder
+        
         Self {
             agent: GeminiAgent::new(),
             fetcher: MarketFetcher::new(),
+            verifier: X402Verifier::new(&rpc_url, &vault_addr),
         }
     }
 
